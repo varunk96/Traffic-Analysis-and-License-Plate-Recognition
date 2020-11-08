@@ -99,18 +99,18 @@ class VehicleCounter(object):
 
 
     @staticmethod
-    def is_valid_vector(a, k):
+    def is_valid_vector(a):
         distance, angle = a
         #threshold_distance = max(10.0, -0.008 * angle**2 + 0.4 * angle + 25.0)
         #return (distance <= threshold_distance)
-        return distance <= int(45 * k)
+        return distance <= 45
 
-    def update_vehicle(self, vehicle, matches, k):
+    def update_vehicle(self, vehicle, matches):
         # Find if any of the matches fits this vehicle
         for i, match in enumerate(matches):
             centroid = match
             vector = self.get_vector(vehicle.positions[-1], centroid)
-            if self.is_valid_vector(vector, k):
+            if self.is_valid_vector(vector):
                 vehicle.add_position(centroid)
                 return i
 
@@ -120,11 +120,11 @@ class VehicleCounter(object):
         return None
 
 
-    def update_count(self, matches, k, output_image = None):
+    def update_count(self, matches, output_image = None):
 
         # First update all the existing vehicles
         for vehicle in self.vehicles:
-            i = self.update_vehicle(vehicle, matches, k)
+            i = self.update_vehicle(vehicle, matches)
             if i is not None:
                 del matches[i]
 
@@ -161,26 +161,18 @@ class VehicleCounter(object):
             for vehicle in self.vehicles:
                 vehicle.draw(output_image)
 
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count1), (42, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count2), (142, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count3), (242, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count4), (342, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count5), (442, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            # cv2.putText(output_image, ("%02d" % self.vehicle_count6), (542, 10)
-            #     , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-
-            print self.vehicle_count1
-            print self.vehicle_count2
-            print self.vehicle_count3
-            print self.vehicle_count4
-            print self.vehicle_count5
-            print self.vehicle_count6
-
+            #cv2.putText(output_image, ("%02d" % self.vehicle_count1), (42, 10)
+            #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
+            #cv2.putText(output_image, ("%02d" % self.vehicle_count2), (142, 10)
+            #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
+            cv2.putText(output_image, ("%02d" % self.vehicle_count3), (840, 80)
+                , cv2.FONT_HERSHEY_PLAIN, 2, (127, 255, 255), 2)
+            #cv2.putText(output_image, ("%02d" % self.vehicle_count4), (342, 10)
+            #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
+            #cv2.putText(output_image, ("%02d" % self.vehicle_count5), (442, 10)
+            #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
+            #cv2.putText(output_image, ("%02d" % self.vehicle_count6), (542, 10)
+            #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
             #cv2.putText(output_image, ("%02d" % ((self.vehicle_count + self.vehicle_count2) / 2)), (242, 10)
             #    , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
         # Remove vehicles that have not been seen long enough

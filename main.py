@@ -15,35 +15,33 @@ DIVIDER_COLOUR = (255, 255, 0)
 BOUNDING_BOX_COLOUR = (255, 0, 0)
 CENTROID_COLOUR = (0, 0, 255)
 
-# Set the percentage of the resizing
-K = 0.5
+#Read one frame of the video to get the scale of the frame
+#cap = cv2.VideoCapture(URL)
+cap = cv2.VideoCapture('v3.mp4')
 
-# Read one frame of the video to get the scale of the frame
-cap = cv2.VideoCapture(URL)
 while True:
     ret, frame = cap.read()
     if ret:
-        frame = cv2.resize(frame, (0, 0), fx = K, fy = K)
         height = frame.shape[0]
         length = frame.shape[1]
-        print height, length
         break
     else:
-        print 'no frame'
+        print('no frame')
 cap.release()
-
 
 #height = frame.shape[0]
 #length = frame.shape[1]
 
 # Set the 6 dividers, formed by 1_A and 1_B
-DIVIDER1 = (DIVIDER1_A, DIVIDER1_B) = ((length / 3, height), (length / 3, int(290 * K)))
-DIVIDER2 = (DIVIDER2_A, DIVIDER2_B) = ((length / 2, height), (length / 2, int(290 * K)))
-DIVIDER3 = (DIVIDER3_A, DIVIDER3_B) = ((length / 3 * 2, height), (length / 3 * 2, int(290 * K)))
-DIVIDER4 = (DIVIDER4_A, DIVIDER4_B) = ((length / 6, int(250 * K)), (length / 6, int(140 * K)))
-DIVIDER5 = (DIVIDER5_A, DIVIDER5_B) = ((length / 3, int(250 * K)), (length / 3, int(140 * K)))
-DIVIDER6 = (DIVIDER6_A, DIVIDER6_B) = ((length / 5 * 4, int(250 * K)), (length / 5 * 4, int(140 * K)))
-
+DIVIDER1 = (DIVIDER1_A, DIVIDER1_B) = ((0, 0), (0, 0))
+DIVIDER2 = (DIVIDER2_A, DIVIDER2_B) = ((0, 0), (0, 0))
+DIVIDER3 = (DIVIDER3_A, DIVIDER3_B) = ((length / 3 * 2, height), (length / 3 * 2, 120))
+DIVIDER4 = (DIVIDER4_A, DIVIDER4_B) = ((0, 0), (0, 0))
+DIVIDER5 = (DIVIDER5_A, DIVIDER5_B) = ((0, 0), (0, 0))
+DIVIDER6 = (DIVIDER6_A, DIVIDER6_B) = ((0, 0), (0, 0))
+#DIVIDER4 = (DIVIDER4_A, DIVIDER4_B) = ((length / 3, 250), (length / 3, 140))
+#DIVIDER5 = (DIVIDER5_A, DIVIDER5_B) = ((length / 2, 250), (length / 2, 140))
+#DIVIDER6 = (DIVIDER6_A, DIVIDER6_B) = ((length / 3 * 2, 250), (length /3 * 2, 140))
 
 # ============================================================================
 
@@ -58,7 +56,6 @@ def get_centroid(x, y, w, h):
 
 # ============================================================================
 
-
 def combined_nearby_centroid(centroid_pool):
     centroid_combined = []
     for (i, centroid) in enumerate(centroid_pool):
@@ -70,7 +67,7 @@ def combined_nearby_centroid(centroid_pool):
         if flag == 0:
             centroid_combined.append([centroid])
         for j in range(i, len(centroid_pool)):
-            if abs(centroid[0] - centroid_pool[j][0]) < int(100 * K) and abs(centroid[1] - centroid_pool[j][1]) < int(40 * K):    
+            if abs(centroid[0] - centroid_pool[j][0]) < 100 and abs(centroid[1] - centroid_pool[j][1]) < 40:    
                 for entry in centroid_combined:
                     if centroid in entry and centroid_pool[j] not in entry:
                         entry.append(centroid_pool[j])
@@ -78,11 +75,11 @@ def combined_nearby_centroid(centroid_pool):
 
 def detect_vehicles(fg_mask):
 
-    MIN_CONTOUR_WIDTH = 15 * K 
-    MIN_CONTOUR_HEIGHT = 15 * K
+    MIN_CONTOUR_WIDTH = 15
+    MIN_CONTOUR_HEIGHT = 15
 
     # Find the contours of any vehicles in the image
-    contours, hierarchy = cv2.findContours(fg_mask
+    _,contours, hierarchy = cv2.findContours(fg_mask
         , cv2.RETR_EXTERNAL
         , cv2.CHAIN_APPROX_SIMPLE)
 
@@ -99,7 +96,7 @@ def detect_vehicles(fg_mask):
         centroid = get_centroid(x, y, w, h)
 
         matches.append(centroid)
-    print matches
+    #print(matches)
     centroid_combined = combined_nearby_centroid(matches)
     for entry in centroid_combined:
                 tempx = []
@@ -128,7 +125,7 @@ def filter_mask(fg_mask):
 
 # ============================================================================
 
-def process_frame(frame, bg_subtractor, car_counter, k):
+def process_frame(frame, bg_subtractor, car_counter):
 
     # Create a copy of source frame to draw into
     processed = frame.copy()
@@ -148,8 +145,6 @@ def process_frame(frame, bg_subtractor, car_counter, k):
     matches = detect_vehicles(fg_mask)
 
     for (i, match) in enumerate(matches):
-        
-
 
         centroid = match
 
@@ -158,42 +153,54 @@ def process_frame(frame, bg_subtractor, car_counter, k):
         #cv2.rectangle(processed, (x, y), (x + w - 1, y + h - 1), BOUNDING_BOX_COLOUR, 1)
         cv2.circle(processed, centroid, 2, CENTROID_COLOUR, -1)
 
-    car_counter.update_count(matches, k, processed)
+    car_counter.update_count(matches, processed)
 
     return processed
     #return fg_mask
 # ============================================================================
 
 def main():
-    bg_subtractor = cv2.BackgroundSubtractorMOG2()
-
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2()
+    fgbg = cv2.createBackgroundSubtractorMOG2()
     car_counter = None # Will be created after first frame is captured
 
     # Set up image source
 
-    #cap = cv2.VideoCapture("flow.mp4")
-    cap = cv2.VideoCapture(URL)
+    cap = cv2.VideoCapture('v3.mp4')
+    #cap = cv2.VideoCapture(URL)
     while True:
         ret, frame = cap.read()
         if not ret:
-            print 'failed'
+            print('failed')
         else:
-            frame = cv2.resize(frame, (0, 0), fx = K, fy = K)
             if car_counter is None:
                 # We do this here, so that we can initialize with actual frame size
                 #car_counter = VehicleCounter(frame.shape[:2], frame.shape[1] / 2)
                 car_counter = VehicleCounter(frame.shape[:2], DIVIDER1, DIVIDER2, DIVIDER3, DIVIDER4, DIVIDER5, DIVIDER6)
                 #print frame.shape
             # Archive raw frames from video to disk for later inspection/testing
+	    rows,cols,_ = frame.shape
+	    #-----------------------------------
+	    kernel = np.ones((2,2), np.uint8)	
+	
+	    fgmask = fgbg.apply(frame)
+	    opening = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
+	    #dilation = cv2.dilate(opening, kernel, iterations=1)
+	    
+	    #-----------------------------------
 
-            processed = process_frame(frame, bg_subtractor, car_counter, K)
-
-            # #cv2.imshow('Source Image', frame)
-            # cv2.imshow('Processed Image', processed)
-
-            # c = cv2.waitKey(10)
-            # if c == 27:
-            #     break
+	    M = cv2.getRotationMatrix2D((cols/2,rows/2),90,1)
+	    dst = cv2.warpAffine(frame,M,(cols,rows))
+	    dst2 = cv2.warpAffine(opening,M,(cols,rows))
+            processed = process_frame(dst, bg_subtractor, car_counter)
+	    #M2 = cv2.getRotationMatrix2D((cols/2,rows/2),0,1)
+	    #dst2 = cv2.warpAffine(processed,M2,(cols,rows))
+            #cv2.imshow('Source Image', frame)
+            cv2.imshow('Processed Image', processed)
+	    cv2.imshow('fg',dst2)
+            c = cv2.waitKey(10)
+            if c == 27:
+                break
 
     cap.release()
     cv2.destroyAllWindows()
